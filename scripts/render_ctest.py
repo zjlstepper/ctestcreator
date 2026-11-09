@@ -43,16 +43,20 @@ def render_passage(source):
             continue
         if len(gaps) != 1 or match.start() and passage[match.start() - 1].isalnum():
             raise ValueError(f"Invalid gap inside {token!r}.")
-        if match.end() < len(passage) and passage[match.end()].isalnum():
-            raise ValueError(f"Bracketed letters must finish a word or compound component: {token!r}.")
+        gap = gaps[0]
+        if gap.end() != len(token) or match.end() < len(passage) and passage[match.end()].isalnum():
+            raise ValueError(f"Bracketed letters must finish the whole word: {token!r}.")
         if position - previous_position < 2:
             raise ValueError("Leave at least one intact word after each gapped word.")
         previous_position = position
-        gap = gaps[0]
         suffix = gap.group(1)
         prefix = token[:gap.start()]
-        tail = token[gap.end():]
-        whole = prefix + suffix + tail
+        whole = prefix + suffix
+        word_length = sum(letter.isalpha() for letter in whole)
+        if 3 <= word_length <= 4 and len(suffix) != 2:
+            raise ValueError(f"Gap exactly two final letters in {whole!r}.")
+        if word_length > 4 and len(suffix) < 3:
+            raise ValueError(f"Gap at least three final letters in {whole!r}.")
         if whole.casefold() in used:
             raise ValueError(f"Repeated gapped word: {whole}.")
         used.add(whole.casefold())
@@ -63,7 +67,7 @@ def render_passage(source):
             f'<span class="cloze-word">{html.escape(prefix)}'
             f'<input aria-label="{label}" type="text" class="blank-input" style="width:{len(suffix)}ch" '
             f'maxlength="{len(suffix)}" autocomplete="off" autocapitalize="none" spellcheck="false">'
-            f'{html.escape(tail)}</span>'
+            '</span>'
         )
         cursor = match.end()
     if len(answers) != 10:
