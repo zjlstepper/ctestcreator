@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>Generate a C-test practice page</title>
+<style>
+    body { max-width: 48rem; margin: 2rem auto; padding: 0 1rem; font: 1rem/1.5 system-ui, sans-serif; }
+    label { display: block; margin: 1rem 0; }
+    input { display: block; }
+    button { padding: .6rem 1rem; }
+    #status { white-space: pre-wrap; }
+</style>
+<script src="../scripts/render_ctest.js" defer></script>
+</head>
+<body>
+<h1>Generate a C-test practice page</h1>
+<p>Choose your UTF-8 passage and the two files from this skill’s assets folder.</p>
+<form id="generator">
+    <label>Bracketed passage (.txt) <input type="file" id="passage" accept=".txt,text/plain" required></label>
+    <label>Practice template (practice.html) <input type="file" id="template" accept=".html,text/html" required></label>
+    <label>Avatar (avatar.png) <input type="file" id="avatar" accept=".png,image/png" required></label>
+    <button type="submit">Download practice page</button>
+</form>
+<p id="status" role="status"></p>
+<script>
+    const selected = id => document.getElementById(id).files[0];
+    const statusLine = document.getElementById("status");
+    document.getElementById("generator").addEventListener("submit", async event => {
+        event.preventDefault();
+        try {
+            const [source, template, image] = await Promise.all([
+                selected("passage").text(), selected("template").text(), selected("avatar").arrayBuffer()
+            ]);
+            const bytes = new Uint8Array(image);
+            if (bytes.length < 8 || [137, 80, 78, 71, 13, 10, 26, 10].some((value, i) => bytes[i] !== value)) {
+                throw new Error("Choose a PNG avatar.");
+            }
+            let binary = "";
+            for (const byte of bytes) binary += String.fromCharCode(byte);
+            const result = renderCTest(source, template, btoa(binary));
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(new Blob([result.html], {type: "text/html;charset=utf-8"}));
+            link.href = url;
+            link.download = "practice.html";
+            link.click();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+            statusLine.textContent = "Generated " + result.words + " words and 10 gaps.";
+        } catch (error) {
+            statusLine.textContent = error.message;
+        }
+    });
+</script>
+</body>
+</html>

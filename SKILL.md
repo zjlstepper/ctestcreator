@@ -5,6 +5,8 @@ description: Write an original TOEFL-style Complete the Words passage on a user-
 
 # TOEFL C-test
 
+Install the whole folder as `toefl-ctest` in the agent's skills directory, keeping `SKILL.md`, `scripts/`, and `assets/` together.
+
 Act as an English proficiency item writer. Create one original academic Complete the Words passage per request by default. Use the requested topic and difficulty. If the topic is missing, ask for it. If difficulty is missing, use intermediate. Vary difficulty through the vocabulary and syntax of the passage while keeping the answer to every gap unambiguous.
 
 ## Author the passage
@@ -17,11 +19,13 @@ Act as an English proficiency item writer. Create one original academic Complete
 ## Review and deliver
 
 - Reconstruct the complete passage. Check word count, factual accuracy, grammar, ten unique gapped words, suffix lengths, intact opening and closing sentences, and the skip-and-resume rhythm. For each gap, try competing words, inflections and regional spellings against the visible letters, missing-letter count and full context. Rewrite or skip any gap with a credible alternative. The renderer verifies structure, while this editorial review establishes answer uniqueness.
-- Save the passage as UTF-8 plain text with the ten bracketed suffixes. The text file contains only the paragraph. Use the same file to generate the HTML. Run the command from the skill directory, or use absolute paths.
+- Save the passage as UTF-8 plain text with the ten bracketed suffixes. The text file contains only the paragraph. Use the same file to generate the HTML in the user's writable workspace. Resolve the renderer and its assets relative to this skill's own directory.
 
 ```sh
-python scripts/render_ctest.py path/to/passage.txt path/to/practice.html
+node "<skill-directory>/scripts/render_ctest.js" "<output-directory>/passage.txt" "<output-directory>/practice.html"
 ```
 
+- Use whichever permitted runtime is already available. The Node renderer uses built-in modules only. If using Python 3, the equivalent is `python3 "<skill-directory>/scripts/render_ctest.py" "<output-directory>/passage.txt" "<output-directory>/practice.html"`. On Windows, use `py -3` or `python` only if it actually runs Python 3. A Microsoft Store alias or an execution denial is a reason to switch methods. Avoid hardcoded interpreter paths, installation, and elevated access for rendering.
+- With neither runtime available, open this skill's [browser generator](assets/generate.html) locally. Load the same passage text, `assets/practice.html`, and `assets/avatar.png`, then select **Download practice page**. It validates and generates the file in the browser without a server or network requests.
 - Open or inspect the HTML and confirm it presents the same passage with ten empty inline inputs and that Submit checks the expected suffixes. Deliver links to both files. If showing the passage inline as well, reproduce just the paragraph with square brackets for the missing letters.
 - The supplied template follows the TOEFL platform's standalone Reading C-test view. It includes the teal banner, question-range strip, hideable elapsed timer, centered passage, length-matched blanks and focus advancement. Submit scores locally and reveals answers in review. The file opens offline and needs no login, remote assets, or platform registration. Use it for newly generated passages.
