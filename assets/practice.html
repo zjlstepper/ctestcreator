@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TOEFL Reading Practice</title>
+<link rel="icon" href="data:,">
+<style>
+    :root { color-scheme: light; font-family: "Open Sans", system-ui, sans-serif; color: #333; }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    body { margin: 0; background: #a8a4a1; }
+    .test-container {
+        width: 85%; max-width: 1200px; min-height: 100vh; margin: 0 auto;
+        background: #fff; border: 1px solid #ccc; border-radius: 8px;
+        box-shadow: 0 4px 12px #0002;
+    }
+    .header {
+        min-height: 58px; padding: 8px 20px; border-radius: 7px 7px 0 0;
+        background: #066a6e; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    }
+    .branding { display: flex; align-items: center; gap: 4px; }
+    .branding img { display: block; width: 100px; height: auto; }
+    .action {
+        height: 38px; border: 1px solid #066a6e; border-radius: 15px; padding: 0 16px;
+        color: #066a6e; background: #fff; font: 600 14px system-ui, sans-serif; cursor: pointer;
+        white-space: nowrap;
+    }
+    .action:hover { background: #eef8f8; }
+    .question-navigator {
+        padding: 10px 20px; background: #f8f9fa; border-bottom: 1px solid #dee2e6;
+        display: flex; align-items: center; justify-content: space-between; gap: 8px 16px; flex-wrap: wrap;
+    }
+    .timer { display: flex; gap: 12px; align-items: center; }
+    .elapsed { font-size: 1.1em; font-weight: bold; font-variant-numeric: tabular-nums; letter-spacing: 1px; }
+    .timer-toggle {
+        border: 0; padding: 0; background: none; color: #066a6e;
+        font: 700 14px system-ui, sans-serif; cursor: pointer;
+    }
+    .timer-toggle:hover { text-decoration: underline; }
+    main { padding: 10px clamp(16px, 4vw, 40px) 40px; }
+    h1 { margin: .83em 0 clamp(56px, 20vh, 200px); padding: 10px 0; text-align: center; font-size: 1.4em; }
+    .ctest-content { max-width: 1000px; margin: 0 auto; font-size: 1.1em; line-height: 1.8; }
+    .ctest-passage { margin: 0; overflow-wrap: break-word; }
+    .cloze-word { display: inline-flex; align-items: baseline; white-space: nowrap; }
+    .blank-input {
+        box-sizing: content-box; margin: 0; padding: 0 0 .15em; border: 0; border-radius: 4px;
+        color: #333; font: 1em/1.2 "Roboto Mono", Consolas, monospace;
+        background: #f5f5f5 linear-gradient(to right, #333 0.8ch, transparent 0.2ch)
+            0 calc(100% - 1px) / 1ch 2px repeat-x;
+    }
+    .blank-input:focus {
+        outline: none;
+        font-size: 1.2em;
+        background-image: linear-gradient(to right, #000 0.8ch, transparent 0.2ch);
+    }
+    .blank-input.filled:not(:focus), .blank-input:read-only { background-image: none; }
+    .blank-input.correct { background-color: #e6f5eb; color: #136339; }
+    .blank-input.incorrect { background-color: #fbe9e7; color: #9d2b24; }
+    .review { margin-top: 24px; border-top: 1px solid #dbe2e4; padding-top: 12px; font-size: .92em; }
+    .review h2 { color: #066a6e; margin: 0 0 4px; font-size: 1.15em; }
+    .review ol { margin: 0; padding-inline-start: 1.5em; }
+    @media (max-width: 650px) {
+        .test-container { width: 100%; border: 0; border-radius: 0; }
+        .header { border-radius: 0; padding-inline: 12px; }
+        .branding img { width: min(24vw, 100px); }
+        .question-navigator { padding-inline: 12px; font-size: .9em; }
+        h1 { margin-bottom: 48px; }
+    }
+</style>
+</head>
+<body>
+<div class="test-container">
+    <header class="header">
+        <div class="branding">
+            <img src="@@AVATAR@@" alt="老郑@留学工坊">
+        </div>
+        <button class="action" id="submit" type="button">Submit</button>
+    </header>
+    <div class="question-navigator">
+        <span>Reading | Question 1-10 of 10</span>
+        <div class="timer">
+            <span class="elapsed" id="elapsed">00:00:00</span>
+            <button class="timer-toggle" id="toggle-timer" type="button" aria-controls="elapsed">Hide Time</button>
+        </div>
+    </div>
+    <main>
+        <h1>Fill in the missing letters in the paragraph.</h1>
+        <div class="ctest-content">
+            <p class="ctest-passage">@@PASSAGE@@</p>
+            <section class="review" id="review" hidden>
+                <h2 tabindex="-1" id="score"></h2>
+                <ol id="answer-review"></ol>
+            </section>
+        </div>
+    </main>
+</div>
+<script type="application/json" id="answer-data">@@ANSWER_DATA@@</script>
+<script>
+    const answers = JSON.parse(document.getElementById('answer-data').textContent);
+    const blanks = [...document.querySelectorAll('.blank-input')];
+    const submit = document.getElementById('submit');
+    const timer = document.getElementById('elapsed');
+    const toggle = document.getElementById('toggle-timer');
+    const review = document.getElementById('review');
+    const score = document.getElementById('score');
+    const answerReview = document.getElementById('answer-review');
+    let started = Date.now();
+    let finished = false;
+
+    function updateTimer() {
+        if (finished) return;
+        const seconds = Math.floor((Date.now() - started) / 1000);
+        timer.textContent = [Math.floor(seconds / 3600), Math.floor(seconds / 60) % 60, seconds % 60]
+            .map(value => String(value).padStart(2, '0')).join(':');
+    }
+    setInterval(updateTimer, 250);
+    toggle.addEventListener('click', () => {
+        timer.hidden = !timer.hidden;
+        toggle.textContent = timer.hidden ? 'Show Time' : 'Hide Time';
+    });
+
+    blanks.forEach((blank, index) => {
+        function updateInput(event) {
+            if (finished || event.isComposing) return;
+            blank.value = blank.value.replace(/[^A-Za-z]/g, '').slice(0, blank.maxLength);
+            blank.classList.toggle('filled', Boolean(blank.value));
+            if (blank.value.length === blank.maxLength) {
+                blanks[(index + 1) % blanks.length].focus();
+            }
+        }
+        blank.addEventListener('input', updateInput);
+        blank.addEventListener('compositionend', updateInput);
+    });
+
+    submit.addEventListener('click', () => {
+        if (finished) {
+            blanks.forEach(blank => {
+                blank.value = '';
+                blank.readOnly = false;
+                blank.classList.remove('correct', 'incorrect', 'filled');
+                blank.removeAttribute('aria-invalid');
+            });
+            review.hidden = true;
+            submit.textContent = 'Submit';
+            started = Date.now();
+            finished = false;
+            updateTimer();
+            blanks[0].focus();
+            return;
+        }
+        updateTimer();
+        finished = true;
+        let correct = 0;
+        answerReview.replaceChildren();
+        blanks.forEach((blank, index) => {
+            const answer = answers[index];
+            const matches = blank.value.toLowerCase() === answer.suffix.toLowerCase();
+            if (matches) correct++;
+            blank.readOnly = true;
+            blank.classList.add(matches ? 'correct' : 'incorrect');
+            blank.setAttribute('aria-invalid', String(!matches));
+            const item = document.createElement('li');
+            const response = blank.value || 'Unanswered';
+            item.textContent = response + ' → ' + answer.suffix + ' (' + answer.word + ')';
+            answerReview.append(item);
+        });
+        score.textContent = correct + ' of ' + blanks.length + ' correct';
+        review.hidden = false;
+        submit.textContent = 'Try Again';
+        score.focus();
+    });
+</script>
+</body>
+</html>
