@@ -65,7 +65,7 @@ def render_passage(source):
         fragments.append(html.escape(passage[cursor:match.start()]))
         fragments.append(
             f'<span class="cloze-word">{html.escape(prefix)}'
-            f'<input aria-label="{label}" type="text" class="blank-input" style="width:{len(suffix)}ch" '
+            f'<input aria-label="{label}" type="text" class="blank-input" style="--blank-length:{len(suffix)}" '
             f'maxlength="{len(suffix)}" autocomplete="off" autocapitalize="none" spellcheck="false">'
             '</span>'
         )

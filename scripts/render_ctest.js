@@ -58,8 +58,8 @@
             const label = escapeHTML("Blank " + answers.length + ". Missing letters after " + prefix);
             fragments.push(escapeHTML(passage.slice(cursor, start)));
             fragments.push('<span class="cloze-word">' + escapeHTML(prefix) +
-                '<input aria-label="' + label + '" type="text" class="blank-input" style="width:' + suffix.length +
-                'ch" maxlength="' + suffix.length + '" autocomplete="off" autocapitalize="none" spellcheck="false"></span>');
+                '<input aria-label="' + label + '" type="text" class="blank-input" style="--blank-length:' + suffix.length +
+                '" maxlength="' + suffix.length + '" autocomplete="off" autocapitalize="none" spellcheck="false"></span>');
             cursor = end;
         }
         if (answers.length !== 10) throw new Error("Every gap needs a visible letter prefix in the same word.");
